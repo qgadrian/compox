@@ -1,0 +1,4 @@
+version: '3.7'
+services:
+    hello-world:
+      image: mendhak/http-https-echo
