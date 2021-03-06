@@ -24,17 +24,22 @@ defmodule Compox.Docker.Services do
   end
 
   @spec start(Service.t()) :: Service.t()
-  def start(%Service{name: name} = service) do
-    Mix.shell().info("[compox] Starting service #{name}...")
+  def start(%Service{name: service_name} = service) do
+    case Containers.get_id(service_name) do
+      nil ->
+        container_id = start_container(service_name)
 
-    System.cmd("docker-compose", ["up", "-d", name])
+        %{service | container_id: container_id}
 
-    container_id = Containers.get_id(name)
+      container_id ->
+        Mix.shell().info(
+          "[compox] Found a container for #{service_name}, reusing it"
+        )
 
-    ConnectionCheck.wait_until_up(container_id)
-    ConnectionCheck.maybe_do_upcheck(name)
+        reuse_container(container_id)
 
-    %{service | container_id: container_id}
+        %{service | container_id: container_id, reused: true}
+    end
   end
 
   @doc """
@@ -49,7 +54,11 @@ defmodule Compox.Docker.Services do
   end
 
   @spec stop(Service.t()) :: :ok
-  def stop(%Service{name: name, container_id: container_id}) do
+  def stop(%Service{
+        name: service_name,
+        container_id: container_id,
+        reused: reused
+      }) do
     stop_or_kill =
       :compox
       |> Application.get_env(:kill_on_finish, false)
@@ -62,10 +71,51 @@ defmodule Compox.Docker.Services do
     # are connections and error logs are thrown
     Process.sleep(200)
 
-    System.cmd("docker-compose", [stop_or_kill, name])
+    case {reused, stop_or_kill} do
+      {true, "kill"} ->
+        Containers.kill(container_id)
+
+      {true, "stop"} ->
+        Containers.stop(container_id)
+
+      {false, _} ->
+        System.cmd("docker-compose", [stop_or_kill, service_name])
+    end
 
     ConnectionCheck.wait_until_down(container_id)
 
-    Mix.shell().info("[compox] Service #{name} killed")
+    Mix.shell().info("[compox] Service #{service_name} killed")
+  end
+
+  #
+  # Private functions
+  #
+
+  @spec reuse_container(Containers.container_id()) :: Containers.container_id()
+  defp reuse_container(container_id) do
+    case Containers.start(container_id) do
+      :ok ->
+        container_id
+
+      {:error, reason} ->
+        Mix.shell().error("[compox] Error trying to reuse container: #{reason}")
+
+        container_id
+    end
+  end
+
+  # If there container id
+  @spec start_container(service_name :: String.t()) :: Containers.container_id()
+  defp start_container(service_name) do
+    Mix.shell().info("[compox] Starting service #{service_name}...")
+
+    System.cmd("docker-compose", ["up", "-d", service_name])
+
+    container_id = Containers.get_id(service_name)
+
+    ConnectionCheck.wait_until_up(container_id)
+    ConnectionCheck.maybe_do_upcheck(service_name)
+
+    container_id
   end
 end

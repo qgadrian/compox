@@ -5,34 +5,63 @@ defmodule Compox.Docker.API.Containers do
 
   @base_uri "/containers"
 
+  @opaque container_id :: String.t()
+
   @doc """
   Get the container id of the given container name.
   """
-  @spec get_id(container_name :: String.t()) :: String.t()
+  @spec get_id(container_name :: String.t()) :: String.t() | nil
   def get_id(container_name) when is_binary(container_name) do
-    filters = %{name: [container_name]}
+    filters = %{
+      filters: %{
+        name: [container_name],
+        status: ["created", "running", "paused", "exited"]
+      }
+    }
 
     "#{@base_uri}/json"
     |> Compox.Docker.API.Client.add_query_params(filters)
-    |> Compox.Docker.API.Client.get!()
-    |> decode_response()
+    |> Compox.Docker.API.Client.get()
     |> case do
-      {:ok, containers} ->
-        Enum.reduce_while(containers, "", fn
+      {:ok, %Tesla.Env{body: containers}} ->
+        Enum.reduce_while(containers, nil, fn
           %{"Id" => container_id} = container_found, _acc ->
             if match_partial_name(container_found, container_name) do
               {:halt, container_id}
             else
-              {:cont, ""}
+              {:cont, nil}
             end
 
           _container, _acc ->
-            {:cont, ""}
+            {:cont, nil}
         end)
 
       _ ->
-        ""
+        nil
     end
+  end
+
+  @spec start(container_id()) :: :ok | {:error, term}
+  def start(container_id) do
+    "#{@base_uri}/#{container_id}/start"
+    |> Compox.Docker.API.Client.post!(%{})
+    |> decode_response()
+    |> case do
+      {:ok, _} -> :ok
+      error -> error
+    end
+  end
+
+  @spec stop(container_id()) :: :ok | {:error, term}
+  def stop(container_id) do
+    "#{@base_uri}/#{container_id}/stop"
+    |> Compox.Docker.API.Client.post!(%{})
+  end
+
+  @spec kill(container_id()) :: :ok | {:error, term}
+  def kill(container_id) do
+    "#{@base_uri}/#{container_id}/kill"
+    |> Compox.Docker.API.Client.post!(%{})
   end
 
   @doc """
@@ -74,11 +103,13 @@ defmodule Compox.Docker.API.Containers do
   @spec decode_response(response :: map) ::
           {:ok, map()} | {:error, String.t()}
   defp decode_response(%{status: 200, body: body}), do: {:ok, body}
+  defp decode_response(%{status: 204}), do: {:ok, "No error"}
+  defp decode_response(%{status: 301}), do: {:error, "No such container"}
+  defp decode_response(%{status: 304}), do: {:ok, "Already started"}
   defp decode_response(%{status: 400}), do: {:error, "Bad parameter"}
   defp decode_response(%{status: 404}), do: {:error, "No such container"}
   # This is move temporally, received when no container and using an old API
   # version
-  defp decode_response(%{status: 301}), do: {:error, "No such container"}
   defp decode_response(%{status: 500}), do: {:error, "Server error"}
   defp decode_response(%{status: code}), do: {:error, "Unknown code: #{code}"}
 end
