@@ -15,7 +15,7 @@ defmodule Compox.Docker.ConnectionCheck do
   @spec maybe_do_upcheck(service_name :: String.t()) :: :ok
   def maybe_do_upcheck(service_name) do
     :compox
-    |> Application.get_env(:container_upchecks)
+    |> Application.get_env(:container_upchecks, [])
     |> Keyword.get(String.to_atom(service_name))
     |> case do
       nil -> :ok

@@ -1,7 +1,7 @@
 defmodule Compox.MixProject do
   use Mix.Project
 
-  @version "0.1.0-beta5"
+  @version "0.1.0-beta6"
 
   def project do
     [

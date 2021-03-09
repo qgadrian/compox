@@ -109,7 +109,7 @@ defmodule Compox.Docker.Services do
   defp start_container(service_name) do
     Mix.shell().info("[compox] Starting service #{service_name}...")
 
-    System.cmd("docker-compose", ["up", "-d", service_name])
+    System.cmd("docker-compose", ["up", "--no-deps", "-d", service_name])
 
     container_id = Containers.get_id(service_name)
 
