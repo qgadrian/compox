@@ -1,3 +1,6 @@
+[![Hex version](https://img.shields.io/hexpm/v/sippet.svg "Hex version")](https://hex.pm/packages/compox)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-9768d1.svg)](https://hexdocs.pm/compox)
+
 # Compox
 
 Compox starts Docker containers on demand.
@@ -67,6 +70,7 @@ use Mix.Config
 config :compox,
   auto_start: true,
   auto_stop: false,
+  exclude: ["a_service_should_not_be_started"],
   # Ensure Postgrex can connect to the db and throws an postgres error (catalog
   # unknown, invalid credentials...)
   container_upchecks: [
