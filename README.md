@@ -3,18 +3,20 @@
 
 # Compox
 
-Compox starts Docker containers on demand.
+## Introduction
+
+Compox ensure your whole infrastructure is up before running the tests.
 
 Compox helps you to setup an ephemeral environment to run your tests using the
 `docker-compose.yml` present in your project. After all your tests are done,
 it will take the test environment down. This way your machine won't waste
 resources having the containers running when they are not needed.
 
-## DISCLAIMER
+## Features
 
-This project is still in beta status and therefore you might find issues using
-it. In any case, a ticket on this project is more than welcome to fix
-anything broken/to improve.
+* Reuse created/running containers for other projects (e.g. shared database)
+* Automatic start of the required container services
+* Automatic stop of the required container services
 
 ## Installation
 
