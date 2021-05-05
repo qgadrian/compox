@@ -54,7 +54,6 @@ defmodule Compox do
 
   @doc false
   def start_link(opts) when is_list(opts) do
-    Mix.shell().info("[compox] Starting containers...")
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
@@ -75,6 +74,8 @@ defmodule Compox do
   @impl GenServer
   def init(opts) do
     if Keyword.get(opts, :auto_start, true) do
+      Mix.shell().info("[compox] Starting containers...")
+
       services = Compose.up(opts)
 
       Mix.shell().info("[compox] All containers up!")
