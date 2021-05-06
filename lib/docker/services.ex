@@ -8,7 +8,7 @@ defmodule Compox.Docker.Services do
 
   alias Compox.Docker.Services.Service
   alias Compox.Docker.API.Containers
-  alias Compox.Docker.ConnectionCheck
+  alias Compox.Docker.Upcheck
 
   @doc """
   Starts [services](`t:Compox.Docker.Service.t/0`) from the `docker compose`.
@@ -25,21 +25,26 @@ defmodule Compox.Docker.Services do
 
   @spec start(Service.t()) :: Service.t()
   def start(%Service{name: service_name} = service) do
-    case Containers.get_id(service_name) do
-      nil ->
-        container_id = start_container(service_name)
+    service =
+      case Containers.get_id(service_name) do
+        nil ->
+          container_id = start_container(service_name)
 
-        %{service | container_id: container_id}
+          %{service | container_id: container_id}
 
-      container_id ->
-        Mix.shell().info(
-          "[compox] Found a container for #{service_name}, reusing it"
-        )
+        container_id ->
+          Mix.shell().info(
+            "[compox] Found a container for #{service_name}, reusing it"
+          )
 
-        reuse_container(container_id)
+          reuse_container(container_id)
 
-        %{service | container_id: container_id, reused: true}
-    end
+          %{service | container_id: container_id, reused: true}
+      end
+
+    Upcheck.maybe_do_upcheck(service_name)
+
+    service
   end
 
   @doc """
@@ -82,7 +87,7 @@ defmodule Compox.Docker.Services do
         System.cmd("docker-compose", [stop_or_kill, service_name])
     end
 
-    ConnectionCheck.wait_until_down(container_id)
+    Upcheck.wait_until_down(container_id)
 
     Mix.shell().info("[compox] Service #{service_name} killed")
   end
@@ -113,8 +118,7 @@ defmodule Compox.Docker.Services do
 
     container_id = Containers.get_id(service_name)
 
-    ConnectionCheck.wait_until_up(container_id)
-    ConnectionCheck.maybe_do_upcheck(service_name)
+    Upcheck.wait_until_up(container_id)
 
     container_id
   end

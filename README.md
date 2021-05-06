@@ -14,9 +14,9 @@ resources having the containers running when they are not needed.
 
 ## Features
 
-* Reuse created/running containers for other projects (e.g. shared database)
-* Automatic start of the required container services
-* Automatic stop of the required container services
+- Reuse created/running containers for other projects (e.g. shared database)
+- Automatic start of the required container services
+- Automatic stop of the required container services
 
 ## Installation
 
@@ -34,10 +34,10 @@ end
 
 To use Compox follow these steps:
 
-* Create a `docker-compose.yml` file with the containers that will be started
-by this application.
+- Create a `docker-compose.yml` file with the containers that will be started
+  by this application.
 
-* Ensure Compox starts all containers before running the tests:
+- Ensure Compox starts all containers before running the tests:
 
 ```elixir
 defp aliases do
@@ -47,14 +47,28 @@ defp aliases do
 end
 ```
 
-* Edit your `test_helper.exs` to stop the containers after the tests are
-done:
+- Edit your `test_helper.exs` to stop the containers after the tests are
+  done:
 
 ```elixir
 ExUnit.after_suite(fn _ ->
   Compox.stop()
 end)
 ```
+
+### Upchecks
+
+Sometimes a container is started by it takes a while to be ready to be used by
+your application. For example, a database container can be started by the
+database will take few seconds to start accepting connections.
+
+To avoid any errors, Compox supports _upchecks_ probe configurations to validate
+whether a container can be used or not.
+
+You can implement your own logic to validate if a container is ready (see
+example below) or use the default provided upchecks:
+
+* `Postgres`: `Compox.Upchecks.Postgrex`
 
 ### Example
 
@@ -73,20 +87,10 @@ config :compox,
   auto_start: true,
   auto_stop: false,
   exclude: ["a_service_should_not_be_started"],
-  # Ensure Postgrex can connect to the db and throws an postgres error (catalog
-  # unknown, invalid credentials...)
   container_upchecks: [
-    "postgres-graphql": fn ->
-      Postgrex.Protocol.connect(
-        hostname: "localhost",
-        database: "",
-        username: "",
-        types: nil
-      )
-      |> case do
-        {:error, %{postgres: _}} -> :ok
-        _ -> :error
-      end
+    "postgres-service": {Compox.Upchecks.Postgrex, []},
+    another_service: fn ->
+      Another.Connection.up?()
     end
   ]
 ```

@@ -15,10 +15,11 @@ defmodule Compox.MixProject do
         formatters: ["html", "epub"],
         extras: extras()
       ],
+      xref: [exclude: Postgrex.Protocol],
       elixir: "~> 1.9",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: @version,
+      version: @version
     ]
   end
 

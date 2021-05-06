@@ -1,4 +1,4 @@
-defmodule Compox.Docker.ConnectionCheck do
+defmodule Compox.Docker.Upcheck do
   @moduledoc false
 
   # XXX: use back off?
@@ -61,13 +61,33 @@ defmodule Compox.Docker.ConnectionCheck do
   # Private functions
   #
 
+  @spec do_upcheck(
+          {upcheck_module :: module(), args :: list(any)},
+          service_name :: String.t()
+        ) ::
+          :ok
+  defp do_upcheck({upcheck_module, args} = upcheck, service_name)
+       when is_atom(upcheck_module) and is_list(args) do
+    upcheck_module
+    |> Kernel.apply(:upcheck, [args])
+    |> case do
+      :ok ->
+        :ok
+
+      _error ->
+        Mix.shell().info("[compox] waiting for #{service_name}...")
+        Process.sleep(@default_sleep)
+        do_upcheck(upcheck, service_name)
+    end
+  end
+
   @spec do_upcheck(upcheck_fun :: function(), service_name :: String.t()) :: :ok
   defp do_upcheck(upcheck_fun, service_name) do
     case upcheck_fun.() do
       :ok ->
         :ok
 
-       _error ->
+      _error ->
         Mix.shell().info("[compox] waiting for #{service_name}...")
         Process.sleep(@default_sleep)
         do_upcheck(upcheck_fun, service_name)
