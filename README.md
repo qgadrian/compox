@@ -25,7 +25,7 @@ Adding `compox` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:compox, "~> 0.1.0-rc1", only: [:test]}
+    {:compox, "~> 0.1.0-rc2", only: [:test]}
   ]
 end
 ```
