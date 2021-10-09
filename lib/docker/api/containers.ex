@@ -67,7 +67,8 @@ defmodule Compox.Docker.API.Containers do
   @doc """
   Inspect a container by ID.
   """
-  @spec information(container_id :: String.t()) :: String.t()
+  @spec information(container_id :: String.t()) ::
+          {:ok, String.t() | map()} | {:error, String.t()}
   def information(container_id) do
     "#{@base_uri}/#{container_id}/json"
     |> Compox.Docker.API.Client.get!()
@@ -77,15 +78,17 @@ defmodule Compox.Docker.API.Containers do
   @doc """
   Check if a container is running.
   """
-  @spec running?(String.t()) :: boolean
+  @spec running?(String.t() | nil) :: boolean
   def running?(container_id) when is_binary(container_id) do
     container_id
     |> information()
     |> case do
-      %{"State" => %{"Running" => true}} -> true
+      {:ok, %{"State" => %{"Running" => true}}} -> true
       _ -> false
     end
   end
+
+  def running?(nil), do: false
 
   #
   # Private functions

@@ -2,7 +2,8 @@ defmodule Compox.Docker.ComposeTest do
   use ExUnit.Case
 
   alias Compox.Docker.Compose
-  alias Compox.Docker.Service
+  alias Compox.Docker.Services
+  alias Compox.Docker.Services.Service
 
   describe "start/1" do
     test "starts a docker compose file" do
@@ -13,13 +14,9 @@ defmodule Compox.Docker.ComposeTest do
         }
       ]
 
-      services = Docker.Compose.start(services_to_start)
+      services = Compose.up(services_to_start)
 
-      refute Enum.any?(services, &is_nil(&1.port))
-
-      Process.sleep(5000)
-
-      assert :ok = Docker.Compose.stop(services)
+      assert :ok = Services.stop(services)
     end
   end
 end
