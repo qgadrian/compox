@@ -16,7 +16,7 @@ defmodule Compox.MixProject do
         extras: extras()
       ],
       xref: [exclude: Postgrex.Protocol],
-      elixir: "~> 1.9",
+      elixir: "~> 1.15",
       package: package(),
       start_permanent: Mix.env() == :prod,
       version: @version
