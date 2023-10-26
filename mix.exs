@@ -36,7 +36,7 @@ defmodule Compox.MixProject do
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:hackney, "~> 1.17"},
       {:jason, "~> 1.2"},
-      {:tesla, "~> 1.7.0"},
+      {:tesla, "~> 1.8.0"},
       {:yaml_elixir, "~> 2.4"}
     ]
   end
